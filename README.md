@@ -74,7 +74,7 @@ If `potato_cnn_model.keras` is not present, run the notebook's training cells
 first to create it.
 
 ```python
-from pathlib import Path
+from pathlib import Path 
 
 import numpy as np
 import tensorflow as tf

@@ -1,0 +1,13 @@
+# tensorflow
+# numpy
+# matplotlib
+# pillow
+# scikit-learn
+# ipykernel
+
+fastapi
+uvicorn
+python-multipart
+tensorflow
+pillow
+numpy
