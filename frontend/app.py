@@ -17,6 +17,16 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+st.markdown(
+    """
+    <style>
+        header[data-testid="stHeader"] {display: none;}
+        div[data-testid="stToolbar"] {display: none;}
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # -----------------------------------------------------------------------------
 # 2. Custom Styling (CSS Injection)
 # -----------------------------------------------------------------------------
