@@ -1,101 +1,105 @@
 # Potato Leaf Disease Classification
 
-This project trains a convolutional neural network (CNN) to classify potato leaf
-images into three categories: early blight, late blight, and healthy.
+This project uses a convolutional neural network (CNN) to classify potato leaf
+images as early blight, late blight, or healthy. The model is trained in a
+Jupyter notebook and can be used by the backend prediction API.
 
-## Project contents
+## Project structure
 
-- `pd_cnn.ipynb` — notebook for inspecting the data, training and evaluating the
-  model, and trying a prediction.
-- `data/` — local labeled images arranged in one folder per class (excluded
-  from Git).
-- `potato_cnn_model.keras` — generated Keras model (excluded from Git).
-- `classification_report.txt` — class names in the model's output order (despite
-  the filename, this file does not contain evaluation metrics).
-- `image.png` and `leaf.jpg` — sample images.
-- `requirements.txt` — Python package dependencies.
+```text
+potato_leaf/
+├── backend/
+│   ├── main.py                 # FastAPI prediction API
+│   └── requirements.txt        # Backend dependencies
+├── data/                       # Local training images (not included in Git)
+│   ├── Potato___Early_blight/
+│   ├── Potato___Late_blight/
+│   └── Potato___healthy/
+├── frontend/
+│   └── requirements.txt        # Streamlit and frontend client dependencies
+├── model/
+│   └── class_names.txt         # Class labels in model output order
+├── notebook/
+│   └── pd_cnn.ipynb            # Data exploration, training, evaluation
+└── sample_images/
+    └── image.png               # Sample image used by the notebook
+```
+
+Training creates `model/potato_cnn_model.keras`. The model file is excluded from
+Git, so it is created locally by training the notebook or must be obtained
+separately before using the prediction API. The frontend folder currently
+contains its dependency list.
 
 ## Dataset
 
-Place images in class-named subfolders under `data/`:
+The dataset is not stored in this repository. Download it from Google Drive
+**[dataset download link to be added after upload]**, extract it, and place the
+three class folders directly inside the project's `data/` directory. Do not
+leave the images inside an extra enclosing folder or leave the dataset as a
+compressed archive.
+
+The expected layout is:
 
 ```text
 data/
 ├── Potato___Early_blight/
+│   └── image files...
 ├── Potato___Late_blight/
+│   └── image files...
 └── Potato___healthy/
+    └── image files...
 ```
 
-The dataset is not included in Git; provide the image folders locally before
-running the notebook.
+Keep the folder names exactly as shown. The notebook reads the class labels
+from these folder names, and the resulting label order is saved to
+`model/class_names.txt`. The `data/` directory is ignored by Git; each person
+who wants to train the model must download and add the dataset locally.
 
-The current dataset contains 2,152 images:
+## Train the model
 
-| Class | Images |
-| --- | ---: |
-| Early blight | 1,000 |
-| Late blight | 1,000 |
-| Healthy | 152 |
+1. Download and extract the dataset into `data/` as described above.
+2. From the project root, create and activate a Python virtual environment:
 
-The healthy class is underrepresented. The notebook applies class weights during
-training to reduce the effect of this imbalance.
+   ```bash
+   python -m venv .venv
+   ```
 
-## Setup and training
+   Activate it on macOS/Linux with `source .venv/bin/activate`, or on Windows
+   with `.venv\Scripts\activate`.
 
-From the project directory, install the packages listed in `requirements.txt`:
+3. Install the notebook's Python dependencies:
+
+   ```bash
+   python -m pip install tensorflow numpy matplotlib pillow ipykernel
+   ```
+
+4. Open `notebook/pd_cnn.ipynb` in VS Code or Jupyter and select the environment
+   you configured above. The notebook expects its working directory to be the
+   project's `notebook/` folder; this lets it locate `data/`, `model/`, and
+   `sample_images/` relative to the project root.
+5. Run the notebook cells in order. It loads RGB images, resizes them to
+   128 × 128, and creates an 80/20 training/validation split. Training uses
+   image augmentation, class weights, early stopping, and learning-rate
+   reduction. It can run for up to 60 epochs.
+
+When training finishes, the notebook saves the trained model to
+`model/potato_cnn_model.keras` and its output class order to
+`model/class_names.txt`. The notebook includes evaluation on the validation
+split; this is not a separate test set and does not guarantee performance on
+new images.
+
+## Backend
+
+`backend/main.py` defines a FastAPI health check and image prediction endpoint.
+Predictions require `model/potato_cnn_model.keras`; train the notebook first if
+the file is not available. Install backend dependencies from the project root
+with:
 
 ```bash
-python -m pip install -r requirements.txt
+python -m pip install -r backend/requirements.txt
 ```
 
-Open `pd_cnn.ipynb` in VS Code, select a Python environment with those packages
-installed, and run the cells from top to bottom. The notebook loads images as
-RGB, resizes them to 128 × 128, and uses an 80/20 training/validation split.
-Training includes random image augmentation and may use a GPU when one is
-available to TensorFlow.
-
-The CNN uses four convolutional blocks and produces probabilities for the three
-classes. The notebook can train for up to 50 epochs, with early stopping and
-learning-rate reduction based on validation loss. The final model is saved as
-`potato_cnn_model.keras`.
-
-## Recorded evaluation
-
-The saved notebook output reports approximately **91% validation accuracy**.
-This is measured on the validation split, not on a separate test set, so it
-should not be interpreted as test performance or as a guarantee for new images.
-
-## Predict with the saved model
-
-After installing the requirements, run this from the project directory to
-classify an image such as `leaf.jpg`:
-
-If `potato_cnn_model.keras` is not present, run the notebook's training cells
-first to create it.
-
-```python
-from pathlib import Path 
-
-import numpy as np
-import tensorflow as tf
-from PIL import Image
-
-model = tf.keras.models.load_model("potato_cnn_model.keras")
-class_names = Path("classification_report.txt").read_text(
-    encoding="utf-8"
-).splitlines()
-
-with Image.open("leaf.jpg") as image:
-    image = image.convert("RGB").resize((128, 128))
-
-batch = np.expand_dims(np.asarray(image, dtype=np.float32), axis=0)
-probabilities = model.predict(batch, verbose=0)[0]
-predicted_index = int(np.argmax(probabilities))
-
-print(
-    f"{class_names[predicted_index]} "
-    f"({probabilities[predicted_index]:.1%})"
-)
-```
-
-The notebook's final cell also demonstrates prediction with `image.png`.
+The prediction route is intended for JPG and PNG images and returns the
+predicted class and class scores. The current backend startup code does not
+connect its model-loading hook to the FastAPI application, so the API needs
+that wiring corrected before predictions will work.
