@@ -33,7 +33,7 @@ contains its dependency list.
 ## Dataset
 
 The dataset is not stored in this repository. Download it from Google Drive
-**[dataset download link to be added after upload]**, extract it, and place the
+**https://drive.google.com/file/d/1cxO1fh14c3fURg6407PX7Th14uVFYxxr/view?usp=drive_link**, extract it, and place the
 three class folders directly inside the project's `data/` directory. Do not
 leave the images inside an extra enclosing folder or leave the dataset as a
 compressed archive.

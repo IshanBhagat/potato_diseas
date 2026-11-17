@@ -8,7 +8,6 @@ import tensorflow as tf
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from PIL import Image, UnidentifiedImageError
 
-
 # Settings 
 # Build the path to the model relative to this file
 # Current folder.__file__ = backend/main.py, so .parent.parent = project root.
@@ -22,7 +21,7 @@ IMG_SIZE = (128, 128)
 # the model outputs 3 numbers, and position 0, 1, 2 map to these names in order.
 CLASS_NAMES = [
     line.strip()
-    for line in (MODEL_DIR / "class_names.txt").read_text(encoding="utf-8")
+    for line in (MODEL_DIR / "class_names.txt").read_text(encoding="utf-8").splitlines()
     if line.strip()
 ]
 
@@ -31,7 +30,7 @@ state = {}
 
 # Startup / shutdown
 @asynccontextmanager
-async def lifespane(app: FastAPI):
+async def lifespan(app: FastAPI):
     # Runs once when the server starts: load the model into memory.
     # Loading once is important, because loading on every request would be very slow.
     state['model'] = tf.keras.models.load_model(MODEL_PATH)
@@ -39,7 +38,7 @@ async def lifespane(app: FastAPI):
     state.clear()   # runs on shutdown: free the memory   
 
 # Create  the API app and attach the starup logic above.
-app = FastAPI(title='Potato Leaf Desease API')
+app = FastAPI(title='Potato Leaf Desease API', lifespan=lifespan)
 
 def pretty(name: str) -> str:
     # Turn "Potato___Early_blight" into "Early Blight" for display
